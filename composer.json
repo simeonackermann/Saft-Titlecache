@@ -1,0 +1,17 @@
+{
+	"license": "GPL3",
+    "authors": [
+        {
+            "name": "Simeon Ackermann",
+            "homepage": "http://asimeon.de",
+            "email": "amseon@web.de",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "saft/saft": "*",
+        "symfony/yaml": "*",
+        "ruflin/elastica": "dev-master"
+    },
+    "minimum-stability": "dev"
+}

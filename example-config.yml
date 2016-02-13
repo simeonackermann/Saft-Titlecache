@@ -1,0 +1,57 @@
+
+# example yaml config for TitleCache
+
+
+config: &conf001
+  store: # store, currently only virtuoso
+    backend: virtuoso
+    virtuoso:
+      dsn: VOS
+      username: dba
+      password: dba
+  cache:    
+    backend: memcached # cache-backend could be: memcached|sqlite|mongodb|apc|elasticsearch|redis
+    memcached: # set host|port|path for the backend
+      host: "localhost"
+      port: 11211
+
+# more configurations could defined like:
+
+# config: &conf002
+#   store:
+#     ...
+
+# and must referenced with: *conf002
+
+actions:
+  # example.org
+  - action: create 
+    config: *conf001
+    graph: "http://example.org/"
+
+  - action: get
+    config: *conf001
+    graph: "http://example.org/"
+    lang: de    
+    uris:
+      - "http://example.org/1"
+      - "http://example.org/2"
+      - "http://example.org/3"
+      - "http://example.org/4"
+      - "http://example.org/5"
+      - "http://example.org/6"
+      - "http://example.org/7"
+      - "http://example.org/8"
+      - "http://example.org/9"
+      - "http://example.org/10"
+      - "http://example.org/11"
+
+  # example.com
+  - action: create 
+    config: *conf001
+    graph: "http://example.com/"
+
+  - action: get
+    config: *conf001
+    graph: "http://example.com/"
+    uris-from: ./example-uris.txt
