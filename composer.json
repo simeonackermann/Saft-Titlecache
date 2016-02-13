@@ -11,7 +11,8 @@
     "require": {
         "saft/saft": "*",
         "symfony/yaml": "*",
-        "ruflin/elastica": "dev-master"
+        "ruflin/elastica": "dev-master",
+        "nette-caching-ext/caching": "*"
     },
     "minimum-stability": "dev"
 }
