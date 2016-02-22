@@ -1,7 +1,9 @@
 <?php
 
+namespace SaftTitleCache;
+
 /*
-# RDF Title Cache 
+# RDF Title Cache
 
 Simple memcache based title cache for virtuoso (realized with [Saft](http://safting.github.io/) and [Nette](https://github.com/nette/caching)).
 
@@ -172,7 +174,7 @@ class TitleCache
      * @return echo     echo JSON result
      */
     function __construct($config=array())
-    {                
+    {
         // may set graph
         if (isset($_REQUEST['graph']) && ! empty($_REQUEST['graph'])) {
             $this->graph = $_REQUEST['graph'];
@@ -181,20 +183,20 @@ class TitleCache
         if (isset($_REQUEST['action']) && ! empty($_REQUEST['action'])) {
             $this->action = $_REQUEST['action'];
         }
-        
+
         if ( isset($_REQUEST['uris']) && ! empty($_REQUEST['uris'])) {
 
             if ( is_array($_REQUEST['uris']) ) {
                 $this->uris = $_REQUEST['uris'];
             } else {
                 $this->uris = explode(",", $_REQUEST['uris']);
-            }            
+            }
         }
 
         if ( isset($_REQUEST['lang']) && ! empty($_REQUEST['lang'])) {
             $this->lang = $_REQUEST['lang'];
         }
-        
+
         // may get config and merge with the defaults
         if ( isset($config) && ! empty($config) ) {
             $this->config = array_replace_recursive($this->config, $config);
@@ -247,7 +249,7 @@ class TitleCache
             case 'redis':
                 $this->cache = new Cache(new RedisStorage($host, $port));
                 break;
-            
+
             default:
                 return $this->createError( 'Unknown cache backend type "'.$backend.'"' );
                 break;
@@ -255,14 +257,14 @@ class TitleCache
 
         // choose action
         switch ($this->action) {
-            case 'get':                
-                $result = $this->getTitles();                
+            case 'get':
+                $result = $this->getTitles();
                 break;
 
-            case 'create':                
-                $result = $this->createCache();                
+            case 'create':
+                $result = $this->createCache();
                 break;
-            
+
             default:
                 return $this->createError( 'Unknown action paramter "'.$this->action.'" given. Try "get" or "create".' );
                 break;
@@ -275,7 +277,7 @@ class TitleCache
      * Create a error message
      *
      * @param string    Error message
-     * @return array 
+     * @return array
      */
     private function createError( $msg = Null ) {
         return $this->createResult( "error", Null, $msg );
@@ -287,7 +289,7 @@ class TitleCache
      * @param string    $type   Status type (success|error)
      * @param mixed     $data   Data
      * @param mixed     $msg    Error message
-     * @return array 
+     * @return array
      */
     private function createResult( $type = "success", $data = Null, $msg = Null ) {
         return array( "status" => $type, "data" => $data, "message" => $msg );
@@ -299,12 +301,12 @@ class TitleCache
      * @return array    The titles
      */
     private function getTitles()
-    {        
+    {
         if ( empty($this->uris) ) {
             return $this->createError( "No uris given. Add some uri comma-seperated like: \"?create=get&uris=http://your-uri-1.org,http://your-uri-2.org\"" );
             break;
         }
-        
+
         $createdOrUpdatedStats = $this->graphCacheStats();
         if ( false == $createdOrUpdatedStats ) {
             return $this->createError( 'Cannot get the cache for graph "'.$this->graph.'". It does not exists. Choose another graph or create the cache first by calling this file like: ?action=create&graph=' . $this->graph );
@@ -319,7 +321,7 @@ class TitleCache
             $titleObjs = $this->cache->load( $this->graph . "." . $uri );
 
             if ( NULL != $titleObjs ) {
-                
+
                 foreach ($titleObjs["titles"] as $key => $titleObj) {
 
                     if ( isset($titleObj['lang']) ) {
@@ -330,7 +332,7 @@ class TitleCache
                         }
 
                         if ( $titleDefLang == NULL && $lang != $this->default_lang
-                            && $titleObj["lang"] == $this->default_lang ) 
+                            && $titleObj["lang"] == $this->default_lang )
                         {
                             $titleDefLang = $titleObj["value"];
                         }
@@ -347,7 +349,7 @@ class TitleCache
                     }
                 }
             }
-            $titles[ $uri ] = $title;            
+            $titles[ $uri ] = $title;
         }
         return $this->createResult( "success", $titles );
     }
@@ -374,7 +376,7 @@ class TitleCache
                 break;
 
             // TODO ...
-            
+
             default:
                 $store = false;
                 break;
@@ -387,14 +389,14 @@ class TitleCache
      * Create the cache
      *
      * @return array    Result array (counts, config, ...)
-     */    
+     */
     private function createCache()
     {
         $counts = 0;
         $startTime = microtime(true);
         $titles = array();
         $store = $this->initiateStore();
-        
+
         if ( ! $store ) {
             return $this->createError( 'Store "'.$this->config["store"]["backend"].'" initiating failed. May wrong config or your store is not running...?' );
         }
@@ -407,7 +409,7 @@ class TitleCache
         }
 
         // sparql query
-        $filter = "FILTER ( ?p = <" . implode("> || ?p = <", $this->title_uris) . "> )";        
+        $filter = "FILTER ( ?p = <" . implode("> || ?p = <", $this->title_uris) . "> )";
         $sql = "SELECT ?s ?p ?o FROM <" . $this->graph . "> WHERE { ?s ?p ?o . " . $filter . " }";
         $queryResult = $store->query($sql);
 
@@ -416,7 +418,7 @@ class TitleCache
             // may titles are not literals? skip
             if ( ! $entry["o"]->isLiteral() ) {
                 continue;
-            }                
+            }
 
             $s = (string)$entry["s"];
             $p = (string)$entry["p"];
@@ -427,33 +429,33 @@ class TitleCache
                 $titles[ $s ] = array(  "titles" => array() );
             }
 
-            $title = array( 
-                "uri" => $p, 
+            $title = array(
+                "uri" => $p,
                 "value" => $o
             );
-            
+
             if ( NULL != $lang && ! empty($lang) ) {
                 $title["lang"] = $lang;
             }
-            
+
             $titles[ $s ]["titles"][] = $title;
         }
 
         // write the cache for each title
         foreach ($titles as $s => $title) {
-            
+
             // sort title as given range in config->title_uris
             usort($title["titles"], function($a, $b) {
                 $aRange = array_search($a["uri"], $this->title_uris);
                 $bRange = array_search($b["uri"], $this->title_uris);
 
                 if ( $aRange == $bRange) {
-                    return 0;                    
+                    return 0;
                 }
                 return ( $aRange < $bRange) ? -1 : 1;
             });
-            
-            $this->cache->save( $this->graph . "." . $s, $title );                    
+
+            $this->cache->save( $this->graph . "." . $s, $title );
             $counts++;
         }
 
@@ -462,15 +464,15 @@ class TitleCache
         // save some graph stats
         $createdOrUpdatedStats = ( $this->graphCacheStats( $counts ) ) ? "updated" : "created";
 
-        return $this->createResult( 
-            "success", 
-            array(  "backend" => $this->config["store"]["backend"], 
-                    "cache" => $this->config["cache"]["backend"], 
-                    "graph" => $this->graph, "default_lang" => $this->default_lang, 
-                    "default_title_uri" => $this->title_uris[0], 
+        return $this->createResult(
+            "success",
+            array(  "backend" => $this->config["store"]["backend"],
+                    "cache" => $this->config["cache"]["backend"],
+                    "graph" => $this->graph, "default_lang" => $this->default_lang,
+                    "default_title_uri" => $this->title_uris[0],
                     "duration" => $endTime - $startTime . " seconds",
-                    "counts" => $counts ), 
-            "Successfully ".$createdOrUpdatedStats." the cache. You can send requests now by asking this file like: ?action=get&uris=uri1,uri1,..." 
+                    "counts" => $counts ),
+            "Successfully ".$createdOrUpdatedStats." the cache. You can send requests now by asking this file like: ?action=get&uris=uri1,uri1,..."
         );
     }
 
@@ -515,10 +517,10 @@ class TitleCache
         if ( Null != $stats ) {
             $stats = array_merge( $stats, array(
                         "uri" => $this->graph,
-                        "store" => $this->config["store"]["backend"],                                        
+                        "store" => $this->config["store"]["backend"],
             ));
 
-            $this->cache->save( 
+            $this->cache->save(
                 "__TitleCacheFor:" . $this->graph,
                 $stats
             );
@@ -527,5 +529,3 @@ class TitleCache
         return ( NULL != $cachedStats ) ? true : false;
     }
 }
-
-

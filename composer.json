@@ -14,5 +14,15 @@
         "ruflin/elastica": "dev-master",
         "nette-caching-ext/caching": "*"
     },
-    "minimum-stability": "dev"
+    "require-dev": {
+        "phpunit/phpunit": "*"
+    },
+    "minimum-stability": "dev",
+    "autoload": {
+        "psr-4": {
+            "SaftTitleCache\\": [
+                "src/SaftTitleCache/"
+            ]
+        }
+    }
 }
